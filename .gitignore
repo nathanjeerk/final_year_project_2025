@@ -1,0 +1,9 @@
+videos/
+coords_vid.csv
+
+.env/
+venv/
+
+.vscode/
+
+*.mp4
