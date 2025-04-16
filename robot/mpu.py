@@ -6,6 +6,8 @@ class MPU6050:
     def __init__(self, bus=1, address=0x68):
         self.bus = smbus.SMBus(bus)
         self.address = address
+        self.angle_x = 0  # Initialize angle variables
+        self.angle_y = 0
         self.initialize_mpu()
         
     def initialize_mpu(self):

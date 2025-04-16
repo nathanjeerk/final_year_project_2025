@@ -2,6 +2,7 @@ from mpu import MPU6050
 from pid import PID
 from motor import Motor
 import time
+import RPi.GPIO as GPIO
 
 class BalancingRobot:
     def __init__(self):
