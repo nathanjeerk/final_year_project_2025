@@ -1,4 +1,4 @@
-coords_vid.csv
+*.csv
 
 .env/
 venv/
@@ -6,3 +6,5 @@ venv/
 .vscode/
 
 *.mp4
+*.pkl
+*.png

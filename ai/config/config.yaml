@@ -1,0 +1,22 @@
+# config/config.yaml
+data:
+  video_base_dir: "../data/raw/"
+  output_csv: "../data/processed/coords_vid.csv"
+  classes: ["good_squat", "bad_squat"]
+
+mediapipe:
+  detection_confidence: 0.5
+  tracking_confidence: 0.5
+
+video:
+  resolution: [1280, 720]
+
+model:
+  save_dir: "../models"
+  save_filenames:
+    RandomForest: "random_forest.pkl"
+    SVM: "svm_model.pkl"
+    LogisticRegression: "LogisticRegression.pkl"
+
+results:
+  save_dir: "models"

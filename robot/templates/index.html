@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BalanceBot Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+      padding: 10px;
+    }
+    h1 { margin: 10px 0; }
+    img { width: 100%; max-width: 480px; border: 2px solid #222; border-radius: 8px; }
+    #labels { font-weight: bold; margin: 10px 0; }
+    #joystick {
+      width: 200px;
+      height: 200px;
+      background: #ddd;
+      border-radius: 50%;
+      margin: 20px auto;
+      position: relative;
+      touch-action: none;
+    }
+    #stick {
+      width: 60px;
+      height: 60px;
+      background: #444;
+      border-radius: 50%;
+      position: absolute;
+      left: 70px; top: 70px;
+      touch-action: none;
+    }
+    canvas { max-width: 480px; margin: 10px auto; display: block; }
+    .slider-container {
+      margin-top: 20px;
+    }
+    .slider-container input {
+      width: 80%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🤖 BalanceBot</h1>
+  <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Live Feed">
+
+  <div id="labels">
+    Pose: <span id="poseLabel">---</span> |
+    PID Output: <span id="pidOutput">0.00</span> |
+    Angle: <span id="angle">0.00°</span>
+  </div>
+
+  <div id="joystick">
+    <div id="stick"></div>
+  </div>
+
+  <canvas id="angleChart" height="100"></canvas>
+  <canvas id="pidChart" height="100"></canvas>
+
+  <div class="slider-container">
+    <h3>🎛️ PID Settings</h3>
+    Kp: <input id="kp" type="number" step="0.1"><br>
+    Ki: <input id="ki" type="number" step="0.01"><br>
+    Kd: <input id="kd" type="number" step="0.1"><br>
+    <button onclick="submitPID()">Update PID</button>
+  </div>
+
+  <div>
+    <h3>📐 Offset Calibration</h3>
+    Offset: <span id="offsetValue">--</span>°
+    <br><br>
+    <button onclick="calibrate()">Calibrate</button>
+  </div>
+  
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // === Joystick ===
+    const joystick = document.getElementById('joystick');
+    const stick = document.getElementById('stick');
+    const center = 100;
+
+    function sendDirection(x, y) {
+      let dir = "STOP";
+        if (x > 90 && x < 110 && y > 90 && y < 110) dir = "STOP";
+        else if (y < 90) dir = "FORWARD";
+        else if (y > 110) dir = "BACKWARD";
+        else if (x < 90) dir = "LEFT";
+        else if (x > 110) dir = "RIGHT";
+      fetch(`/control?dir=${dir}`);
+    }
+
+    function resetStick() {
+      stick.style.left = '70px';
+      stick.style.top = '70px';
+      fetch('/control?dir=STOP');
+    }
+
+    stick.addEventListener('touchstart', e => e.preventDefault());
+    stick.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const rect = joystick.getBoundingClientRect();
+      const touch = e.touches[0];
+      let x = touch.clientX - rect.left;
+      let y = touch.clientY - rect.top;
+      x = Math.max(0, Math.min(x, 200));
+      y = Math.max(0, Math.min(y, 200));
+      stick.style.left = `${x - 30}px`;
+      stick.style.top = `${y - 30}px`;
+      sendDirection(x, y);
+    });
+    stick.addEventListener('touchend', resetStick);
+
+    // === Charts ===
+    let angleData = [], pidData = [], timestamps = [];
+
+    const angleChart = new Chart(document.getElementById("angleChart"), {
+      type: 'line',
+      data: {
+        labels: timestamps,
+        datasets: [{
+          label: 'Angle (°)',
+          data: angleData,
+          borderColor: 'blue',
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: { x: { display: false }, y: { beginAtZero: false } }
+      }
+    });
+
+    const pidChart = new Chart(document.getElementById("pidChart"), {
+      type: 'line',
+      data: {
+        labels: timestamps,
+        datasets: [{
+          label: 'PID Output',
+          data: pidData,
+          borderColor: 'green',
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: { x: { display: false }, y: { beginAtZero: false } }
+      }
+    });
+
+    function updateData() {
+      fetch("/data").then(res => res.json()).then(data => {
+        const now = new Date().toLocaleTimeString();
+        if (timestamps.length > 30) {
+          timestamps.shift(); angleData.shift(); pidData.shift();
+        }
+        timestamps.push(now);
+        angleData.push(data.angle);
+        pidData.push(data.pid_output);
+        angleChart.update();
+        pidChart.update();
+        document.getElementById("angle").textContent = data.angle.toFixed(2);
+        document.getElementById("pidOutput").textContent = data.pid_output.toFixed(2);
+      });
+
+      fetch("/pose_label").then(res => res.json()).then(data => {
+        document.getElementById("poseLabel").textContent = data.label;
+      });
+    }
+
+    function updatePIDSliders() {
+      fetch('/get_pid')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("kp").value = data.kp;
+          document.getElementById("ki").value = data.ki;
+          document.getElementById("kd").value = data.kd;
+        });
+    }
+
+    function submitPID() {
+      const kp = document.getElementById("kp").value;
+      const ki = document.getElementById("ki").value;
+      const kd = document.getElementById("kd").value;
+
+      const formData = new FormData();
+      formData.append("kp", kp);
+      formData.append("ki", ki);
+      formData.append("kd", kd);
+
+      fetch("/set_pid", { method: "POST", body: formData })
+        .then(res => res.text())
+        .then(alert);
+    }
+
+    function updateOffset() {
+      fetch('/get_offset')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("offsetValue").textContent = data.offset;
+        });
+    }
+
+    function calibrate() {
+      fetch('/calibrate', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          updateOffset();  // refresh the offset shown on screen
+        });
+    }
+
+
+    updatePIDSliders();
+    setInterval(updateData, 500);
+    updateOffset();
+
+  </script>
+</body>
+</html>
