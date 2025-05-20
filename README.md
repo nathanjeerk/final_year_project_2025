@@ -56,49 +56,49 @@ pip install -r requirements.txt
 
 ### Model Training
 
-Record pose data using ai/pose_data_collector.py
+- Record pose data using ai/pose_data_collector.py
 
-Train the classifier: python ai/train_model.py
+- Train the classifier: python ai/train_model.py
 
-Evaluate results and export model for inference
+- Evaluate results and export model for inference
 
 ### Web UI
 The robot hosts a Flask-based dashboard featuring:
 
-Joystick-based movement
+- Joystick-based movement
 
-Live webcam feed
+- Live webcam feed
 
-PID graph plotting
+- PID graph plotting
 
-Calibration and pose feedback
+- Calibration and pose feedback
 
-Access via browser on the same network
+- Access via browser on the same network
 
 ### Technologies Used
-Python, Flask
+- Python, Flask
 
-MediaPipe, OpenCV
+- MediaPipe, OpenCV
 
-scikit-learn, NumPy
+- scikit-learn, NumPy
 
-VTK (optional visualization)
+- VTK (optional visualization)
 
-HTML/CSS/JavaScript (for web UI)
+- HTML/CSS/JavaScript (for web UI)
 
 ### Results
 
-Pose classification accuracy: XX%
+- Pose classification accuracy: XX%
 
-Balancing repeatability: ±X degrees
+- Balancing repeatability: ±X degrees
 
-Real-time inference latency: X ms
+- Real-time inference latency: X ms
 
 ### Future Improvements
-Use TensorFlow Lite for faster inference
+- Use TensorFlow Lite for faster inference
 
-Add multi-pose support (e.g., lunges, push-ups)
+- Add multi-pose support (e.g., lunges, push-ups)
 
-Remote monitoring via cloud dashboard
+- Remote monitoring via cloud dashboard
 
-Add voice or gesture command control
+- Add voice or gesture command control
